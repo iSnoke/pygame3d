@@ -16,7 +16,7 @@ def camera_pitch(angle,forward,right,up):
 	up  = np.matmul(up,rotate)
 	return forward,right,up
 
-def translate_matrix(position):
+def translate_matrix(position,right):
 	x, y, z, w = position
 	return np.array([
 	    [1, 0, 0, 0],
@@ -71,15 +71,12 @@ def point3d(cam,screen,color,x,y,z):
 	BOTTOM = -TOP
 	H_WIDTH, H_HEIGHT = cam[2] // 2, cam[3] // 2
 
-	m00 = 2 / (RIGHT - LEFT)
-	m11 = 2 / (TOP - BOTTOM)
-	m22 = (FAR + NEAR) / (FAR - NEAR)
-	m32 = -2 * NEAR * FAR / (FAR - NEAR)
+
 	projection_matrix = np.array([
-	    [m00, 0, 0, 0],
-	    [0, m11, 0, 0],
-	    [0, 0, m22, 1],
-	    [0, 0, m32, 0]
+	    [2 / (RIGHT - LEFT), 0, 0, 0],
+	    [0, 2 / (TOP - BOTTOM), 0, 0],
+	    [0, 0, (FAR + NEAR) / (FAR - NEAR), 1],
+	    [0, 0, -2 * NEAR * FAR / (FAR - NEAR), 0]
 	])
 
 	HW, HH = H_WIDTH, H_HEIGHT
@@ -90,7 +87,7 @@ def point3d(cam,screen,color,x,y,z):
 	    [HW, HH, 0, 1]
 	])
 
-	#print(cam_pos)
+
 	vertex = [x,y,z,1.0]
 
 	vertex = np.matmul(vertex,cam_pos) 
@@ -100,11 +97,9 @@ def point3d(cam,screen,color,x,y,z):
 	vertex = np.matmul(vertex,to_screen_matrix)
 	vertex = vertex[:2]
 
-	#print(vertex)
-	#if not any_func(vertex, H_WIDTH, H_HEIGHT):
 	pygame.draw.circle(screen, (color), (vertex),5)
 
-	#exit(0)
+
 
 
 
@@ -134,25 +129,21 @@ def RenderObjet(screen,cam,name,color,px=0,py=0,pz=0):
 	LEFT = -RIGHT
 	TOP = tan(v_fov / 2)
 	BOTTOM = -TOP
-	H_WIDTH, H_HEIGHT = cam[2] // 2, cam[3] // 2
+	h_width, h_height = cam[2] // 2, cam[3] // 2
 
-	m00 = 2 / (RIGHT - LEFT)
-	m11 = 2 / (TOP - BOTTOM)
-	m22 = (FAR + NEAR) / (FAR - NEAR)
-	m32 = -2 * NEAR * FAR / (FAR - NEAR)
 	projection_matrix = np.array([
-	    [m00, 0, 0, 0],
-	    [0, m11, 0, 0],
-	    [0, 0, m22, 1],
-	    [0, 0, m32, 0]
+	    [2 / (RIGHT - LEFT), 0, 0, 0],
+	    [0, 2 / (TOP - BOTTOM), 0, 0],
+	    [0, 0, (FAR + NEAR) / (FAR - NEAR), 1],
+	    [0, 0, -2 * NEAR * FAR / (FAR - NEAR), 0]
 	])
 
-	HW, HH = H_WIDTH, H_HEIGHT
+	hw, hh = h_width, h_height
 	to_screen_matrix = np.array([
-	    [HW, 0, 0, 0],
-	    [0, -HH, 0, 0],
+	    [hw, 0, 0, 0],
+	    [0, -hh, 0, 0],
 	    [0, 0, 1, 0],
-	    [HW, HH, 0, 1]
+	    [hw, hh, 0, 1]
 	])
 
 
@@ -162,7 +153,7 @@ def RenderObjet(screen,cam,name,color,px=0,py=0,pz=0):
 		vertices.append([i[0]+px,i[1]+py,i[2]+pz,i[3]])
 
 	faces = np.array([np.array(face) for face in faces])
-	color_faces = [(pygame.Color('orange'), face) for face in faces]
+	color = [(pygame.Color('orange'), face) for face in faces]
 
 
 	vertices = np.matmul(vertices,cam_pos) 
@@ -173,10 +164,10 @@ def RenderObjet(screen,cam,name,color,px=0,py=0,pz=0):
 	vertices = vertices[:, :2]
 
 
-	for index, color_face in enumerate(color_faces):
-		color, face = color_face
+	for index, color in enumerate(color):
+		color, face = color
 		polygon = vertices[face]
-		if not any_func(polygon, H_WIDTH, H_HEIGHT):
+		if not any_func(polygon, h_width, h_height):
 			pygame.draw.polygon(screen, color, polygon, 1)
 
 
@@ -186,8 +177,7 @@ def RenderObjet(screen,cam,name,color,px=0,py=0,pz=0):
 def Camera(far,near,width,height,position,cx=0,cy=0,cz=0,rx=0,ry=0,rz=0):
 	if len(position) == 3: position = np.array([*position, 1.0])
 	#position = np.array([position[0],position[1],position[2],1.0])
-	moving_speed = 0.3
-	rotation_speed = 0.015
+	speed = 0.3
 
 
 	forward = np.array([0, 0, 1, 1])
@@ -196,13 +186,13 @@ def Camera(far,near,width,height,position,cx=0,cy=0,cz=0,rx=0,ry=0,rz=0):
 
 	
 
-	position -= right * moving_speed * cx
-	position += forward * moving_speed * cz 
-	position += up * moving_speed * cy
+	position -= right * speed * cx
+	position += forward * speed * cz 
+	position += up * speed * cy
  
 
 	forward,right,up = camera_yaw(ry,forward,right,up)
 	forward,right,up = camera_pitch(rx,forward,right,up)
-
-	return far,near,width,height, np.matmul(translate_matrix(position),rotate_matrix(right,forward,up))
+	#print (right)
+	return far,near,width,height, np.matmul(translate_matrix(position,right),rotate_matrix(right,forward,up))
 
