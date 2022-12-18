@@ -1,21 +1,135 @@
+
+import pygame3d
 import pygame
-from pygame3d import *
+from math import *
 pygame.init()
-screen_size = 800
 
-screen = pygame.display.set_mode( (screen_size,screen_size) )
+h,w = 1000,1000
+far,near = 100000,0.0000001
+
+
+screen = pygame.display.set_mode( (h,w) )
+pygame.mouse.set_visible(False)
 clock = pygame.time.Clock()
-FPS = 60
+
+cube_points = [
+	[0,0,0],
+	[0,0,1],
+	[0,1,1],
+	[1,1,0],
+	[1,1,1],
+	[1,0,0],
+	[0,1,0],
+	[1,0,1]
+]
 
 
-#cam_pos = [1,0,-10]
-cam_pos = [0,0,-10]
-far = 100
-near = 1
+piso_puntos = []
 
-cx = cy = cz = 0
+for x in range(0,11):
+	for z in range (0,11):
+		piso_puntos.append([x-10,-1,z-10])
+
+
+triangle = [
+
+	[
+		[0,0,1],
+		[1,0,1],
+		[1,1,1]
+	],
+	[
+		[0,0,1],
+		[0,1,1],
+		[1,1,1]
+	],
+	[
+		[0,0,0],
+		[0,1,0],
+		[0,1,1]
+	],
+	[
+		[0,0,0],
+		[0,0,1],
+		[0,1,1]
+	],
+	[
+		[0,0,0],
+		[1,0,0],
+		[1,1,0]
+	],
+	[
+		[0,0,0],
+		[0,1,0],
+		[1,1,0]
+	],
+
+	[
+		[0,0,0],
+		[1,0,0],
+		[1,0,1]
+	],
+	[
+		[0,0,0],
+		[0,0,1],
+		[1,0,1]
+	],
+	[
+		[1,0,0],
+		[1,1,0],
+		[1,1,1]
+	],
+	[
+		[1,0,0],
+		[1,0,1],
+		[1,1,1]
+	],
+	[
+		[0,1,0],
+		[1,1,0],
+		[1,1,1]
+	],
+	[
+		[0,1,0],
+		[0,1,1],
+		[1,1,1]
+	]
+
+]
+
+plane = [
+	[-10,-1,0],
+	[-10,-1,-10],
+	[0,-1,0],
+	[0,-1,-10]
+
+]
+
+piso = [
+	[
+		[-10,-1,0],
+		[-10,-1,-10],
+		[0,-1,-10]
+
+	],
+	[
+		[-10,-1,0],
+		[0,-1,0],
+		[0,-1,-10]
+	]
+
+]
+
+
+
+
+cx = 0
+cy = 0
+cz = -2
 rx = ry = rz = 0
-#cam = Camera(far,near,screen_size,screen_size,cam_pos)
+
+
+color = (255,255,255)
 
 while True:
 	for event in pygame.event.get():
@@ -23,54 +137,69 @@ while True:
 			pygame.quit()
 
 
+
+
 	screen.fill((0,0,0))
 
-	key = pygame.key.get_pressed()
-	if key[pygame.K_e]:
-		cy -= 0.1
-	if key[pygame.K_q]:
-		cy += 0.1
-	if key[pygame.K_d]:
-		cx -= 0.1
-	if key[pygame.K_a]:
-		cx += 0.1
-	if key[pygame.K_w]:
-		cz += 0.1
-	if key[pygame.K_s]:
-		cz -= 0.1
+	projection = pygame3d.Projection(pi / 3,far,near,h,w)
+
+	pygame.mouse.set_pos([h/2,w/2])
+
+	mx,my = pygame.mouse.get_pos()
 
 	
-	if key[pygame.K_UP]:
-		rx -= 0.015
-	if key[pygame.K_DOWN]:
-		rx += 0.015
-	if key[pygame.K_LEFT]:
-		rz -= 0.015
-	if key[pygame.K_RIGHT]:
-		rz += 0.015
-
-		
-
-	cam = Camera(far,near,screen_size,screen_size,cam_pos,cx,cy,cz,rx,rz,ry)
+	rx += (h/2-mx)*0.005
+	ry -= (w/2-my)*0.005
+	
+	key = pygame.key.get_pressed()
 
 
+	
 
-	point3d(cam,screen,(255,0,0),0,0,0)
-	point3d(cam,screen,(255,0,0),0,0,1)
-	point3d(cam,screen,(255,0,0),0,1,1)
-	point3d(cam,screen,(255,0,0),1,0,0)
-	point3d(cam,screen,(255,0,0),1,1,0)
-	point3d(cam,screen,(255,0,0),0,1,0)
-	point3d(cam,screen,(255,0,0),1,0,1)
-	point3d(cam,screen,(255,0,0),1,1,1)
+	if key[pygame.K_w]:
+		cx += sin(rx)*0.1
+		cz += -cos(rx)*0.1
+
+	if key[pygame.K_s]:
+		cx -= sin(rx)*0.1
+		cz -= -cos(rx)*0.1	
+
+	if key[pygame.K_d]:
+		cx += -cos(rx)*0.1
+		cz -= sin(rx)*0.1
+
+	if key[pygame.K_a]:
+		cx -= -cos(rx)*0.1
+		cz += sin(rx)*0.1
+
+	
+
+	if key[pygame.K_q]:
+		cy += 0.1
+
+
+
+	if key[pygame.K_e]:
+		cy -= 0.1
+
+	if key[pygame.K_SPACE]:
+		pygame.quit()
 
 
 
 
+	look = pygame3d.LookAt(cx,cy,cz,rx,ry,rz)
 
 
-	RenderObjet(screen,cam,"objeto.obj",(255,0,255),4,0,0)
+	pygame3d.Render(screen,projection,cube_points,look)
 
+	pygame3d.RenderTriangles(screen,color,projection,triangle,look)
+
+	pygame3d.RenderTriangles(screen,color,projection,piso,look)
+
+
+	pygame3d.Render(screen,projection,piso_puntos,look)
 
 	pygame.display.update()
-	clock.tick(FPS)
+
+	clock.tick(60)
